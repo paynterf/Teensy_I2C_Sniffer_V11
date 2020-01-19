@@ -1,2 +1,30 @@
 This is a Teensy 3.2 program to monitor I2C transactions between an I2C master and an I2C slave device. As it stands, the program is 
 specialized for a MPU6050 I2C device, and prints out the calculated yaw value each time it detects a 28-bit packet from the MPU6050 DMP.
+/* 'Notes:
+
+    A typical I2C sentence when communicating with a MPU6050 IMU module goes something like:
+        "I2C(68) wrote 1 byte to 75 - C0 Done."
+        "I2C(68) wrote 3 bytes to 72 - C0 0C 10 Done."
+        "I2C(68) read 5 bytes from 6A - C0 0C 10 14 03 Done."
+
+    To form a sentence, we need:
+        Device addr: 68 in the above examples
+        Read/Write direction
+        To/From register address:  75, 72 and 6A in the above examples
+        Data:  C0, C0 0C 10, and C0 0C 10 14 03 in the above examples
+        number of bytes written/read:  1,3 & 5 in the above examples
+
+     Each I2C communication proceeds as follows (assuming a START from an IDLE condition):
+         A START or RESTART condition, denoted by SDA & SCL HIGH, followed by SDA LOW, SCL HIGH
+         A 7-bit device address, MSB first (0x8/0xC = 1, 0x0/0x4 = 0)
+         A R/W bit (0x8/0xC = read, 0x0/0x4 = write)
+         An ACK bit (0x8/0xC = NAK, 0x0/0x4 = ACK)
+         If the bus direction is WRITE, then
+             A register address for read/write
+             zero or more additional data bytes
+         Else (the bus direction is READ)
+            One or more additional data bytes
+         Endif
+
+    This version uses a fixed-size (2048 bytes) array instead of tonton81's circular buffer library.
+*/
