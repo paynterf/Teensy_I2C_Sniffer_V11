@@ -1,0 +1,2 @@
+This is a Teensy 3.2 program to monitor I2C transactions between an I2C master and an I2C slave device. As it stands, the program is 
+specialized for a MPU6050 I2C device, and prints out the calculated yaw value each time it detects a 28-bit packet from the MPU6050 DMP.
