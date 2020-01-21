@@ -31,10 +31,19 @@
          Endif
 
     This version uses a fixed-size (2048 bytes) array instead of tonton81's circular buffer library.
+
+    To generalize for any I2C slave device rather than just the MPU6050 IMU, comment out the 
+    "#define MPU6050_SPECIFIC line below. This will remove all MPU6050 specific code
 */
 
+
+//#define MPU6050_SPECIFIC
+
 #include <TimerOne.h> //needed for ISR
+#ifdef MPU6050_SPECIFIC
 #include "helper_3dmath.h" //Arduino\Libraries\i2cdevlib\Arduino\MPU6050\ needed to compute yaw from MPU6050 DMP packet
+#endif
+
 
 //#define PARSE_LOOP_DEBUG
 
@@ -88,6 +97,14 @@ volatile bool bIsStop = false;
 volatile uint8_t last_current;
 #pragma endregion ISR Support
 
+#ifdef MPU6050_SPECIFIC
+//01/21/20 these forward declarations are required to force the preprocessor 
+//to handle #ifdef MPU6050_SPECIFIC properly
+uint8_t dmpGetQuaternion(int16_t* data, const uint8_t* packet);
+uint8_t dmpGetQuaternion(Quaternion* q, const uint8_t* packet);
+uint8_t dmpGetYawPitchRoll(float* data, Quaternion* q, VectorFloat* gravity);
+uint8_t dmpGetGravity(VectorFloat* v, Quaternion* q);
+
 Quaternion q;           // [w, x, y, z]         quaternion container
 VectorInt16 aa;         // [x, y, z]            accel sensor measurements
 VectorInt16 aaReal;     // [x, y, z]            gravity-free accel sensor measurements
@@ -95,6 +112,7 @@ VectorInt16 aaWorld;    // [x, y, z]            world-frame accel sensor measure
 VectorFloat gravity;    // [x, y, z]            gravity vector
 float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 float global_yawval = 0; //updated by GetIMUHeadingDeg()
+#endif // MPU6050_SPECIFIC
 
 void setup()
 {
@@ -620,22 +638,27 @@ void OutputFormattedSentence(int RW, uint8_t dev, uint8_t reg, uint8_t numbytes,
     {
         Serial.printf("%x ", bytearray[i]);
     }
+    Serial.printf(". Done\n");
 
-    //01/18/20 experiment to decode 28-byte packet into yaw value
-    if (numbytes == 28)
-    {
-        dmpGetQuaternion(&q, bytearray);
-        dmpGetGravity(&gravity, &q);
-        dmpGetYawPitchRoll(ypr, &q, &gravity);
-
-        //compute the yaw value
-        global_yawval = ypr[0] * 180 / M_PI;
-        Serial.printf("yawval = %3.2f\n", global_yawval);
-    }
-    else
-    {
-        Serial.printf(". Done\n");
-    }
+//#ifdef MPU6050_SPECIFIC
+//
+//
+//    //01/18/20 experiment to decode 28-byte packet into yaw value
+//    if (numbytes == 28)
+//    {
+//        dmpGetQuaternion(&q, bytearray);
+//        dmpGetGravity(&gravity, &q);
+//        dmpGetYawPitchRoll(ypr, &q, &gravity);
+//
+//        //compute the yaw value
+//        global_yawval = ypr[0] * 180 / M_PI;
+//        Serial.printf("yawval = %3.2f\n", global_yawval);
+//    }
+//    else
+//    {
+//        Serial.printf(". Done\n");
+//    }
+//#endif // MPU6050_SPECIFIC
 
 
 
@@ -685,10 +708,12 @@ uint16_t RemoveInvalidBytes(uint8_t* rawdata, uint8_t* validdata)
 }
 #pragma endregion Support Functions
 
-#pragma region YAW_COMPUTATIONS
-//01/18/2020: I copied these functions from MPU6050_6Axis_MotionApps_V6_12.h and
-//  modified them to be called directly instead of from an 'mpu' object
-    
+#ifdef MPU6050_SPECIFIC
+
+//#pragma region YAW_COMPUTATIONS
+////01/18/2020: I copied these functions from MPU6050_6Axis_MotionApps_V6_12.h and
+////  modified them to be called directly instead of from an 'mpu' object
+//    
 uint8_t dmpGetQuaternion(int16_t* data, const uint8_t* packet) 
 {
     // TODO: accommodate different arrangements of sent data (ONLY default supported now)
@@ -717,7 +742,8 @@ uint8_t dmpGetQuaternion(Quaternion* q, const uint8_t* packet)
     return status; // int16 return value, indicates error if this line is reached
 }
 
-uint8_t dmpGetYawPitchRoll(float* data, Quaternion* q, VectorFloat* gravity) {
+uint8_t dmpGetYawPitchRoll(float* data, Quaternion* q, VectorFloat* gravity) 
+{
     // yaw: (about Z axis)
     data[0] = atan2(2 * q->x * q->y - 2 * q->w * q->z, 2 * q->w * q->w + 2 * q->x * q->x - 1);
     // pitch: (nose up/down, about Y axis)
@@ -736,10 +762,12 @@ uint8_t dmpGetYawPitchRoll(float* data, Quaternion* q, VectorFloat* gravity) {
 }
 
 
-uint8_t dmpGetGravity(VectorFloat* v, Quaternion* q) {
+uint8_t dmpGetGravity(VectorFloat* v, Quaternion* q) 
+{
     v->x = 2 * (q->x * q->z - q->w * q->y);
     v->y = 2 * (q->w * q->x + q->y * q->z);
     v->z = q->w * q->w - q->x * q->x - q->y * q->y + q->z * q->z;
     return 0;
 }
-#pragma endregion YAW_COMPUTATIONS
+//#pragma endregion YAW_COMPUTATIONS
+#endif //MPU6050_SPECIFIC
