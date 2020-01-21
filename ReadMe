@@ -29,4 +29,9 @@ It was created using Visual Studio 2019 and the Visual Micro add-in for Arduino.
          Endif
 
     This version uses a fixed-size (2048 bytes) array instead of tonton81's circular buffer library.
+    
+    
+    To generalize for any I2C slave device rather than just the MPU6050 IMU, comment out the 
+    "#define MPU6050_SPECIFIC line below. This will remove all MPU6050 specific code
+
 */
