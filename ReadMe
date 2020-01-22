@@ -35,3 +35,13 @@ It was created using Visual Studio 2019 and the Visual Micro add-in for Arduino.
     "#define MPU6050_SPECIFIC line below. This will remove all MPU6050 specific code
 
 */
+
+
+Additional information can be found on my blog site at
+
+https://www.fpaynter.com/2020/01/teensy-i2c-sniffer-for-mpu6050-part-ii/
+
+and on the PJRC forum at
+
+https://forum.pjrc.com/threads/59160-Teensy-I2C-Sniffer-for-MPU6050?p=227243#post227243
+
